@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+ 
+<title>Large Force D3 on canvas</title>
+
+<body>
+
+<script src="http://bl.ocks.org/syntagmatic/raw/3341641/render-queue.js"></script>
+<script src="http://d3js.org/d3.v2.js"></script>
+ 
+<script>
+
+var WIDTH = 1200;
+var HEIGHT = 800;
+
+var NUM_NODES = 10000;
+var NUM_EDGES = 100000;
+
+var links = [];
+var nodes = [];
+
+var x = d3.scale.linear()
+        .domain([0, WIDTH])
+        .range([0, WIDTH]);
+
+var y = d3.scale.linear()
+          .domain([0, HEIGHT])
+          .range([HEIGHT, 0]);
+
+var cv = d3.select("body")
+             .append("canvas")
+             .attr("width", WIDTH)
+             .attr("height", HEIGHT);
+
+var canvas = cv
+            .call(d3.behavior.zoom().x(x).y(y).scaleExtent([1,8]).on("zoom", zoom))
+             .node()
+             .getContext("2d");
+
+var getColor = d3.scale.linear()
+               .domain([0, 0.5, 1])
+               .range(["#ef2212", "#e7c767", "#2799df"])
+               .interpolate(d3.interpolateHcl); 
+
+function generateNodes(num) {
+   var nodes = d3.range(num).map(function(d, i) {
+     return {
+       x: Math.random() * WIDTH,
+       y: Math.random() * HEIGHT,
+       r: Math.random() * 10 + 3,
+       color: getColor(Math.random()),
+       type: "node"
+     };
+   });
+
+  return nodes;
+};
+
+function generateLinks(nodes, num) {
+   var links = d3.range(num).map(function(d) {
+       return {
+         source: nodes[Math.floor(Math.random() * nodes.length)],
+         target: nodes[Math.floor(Math.random() * nodes.length)],
+         color: getColor(Math.random()),
+         type: "link"
+       };
+   });
+   
+   return links;
+};
+
+var clear_canvas = function() {
+        canvas.clearRect(0,0,WIDTH, HEIGHT);
+};
+
+function renderNode(d) {
+
+  var cx = x(d.x);
+  var cy = y(d.y);
+
+  canvas.fillStyle = d.color;
+  canvas.beginPath();
+  canvas.fillRect(cx, cy, d.r / 2, d.r / 2);
+  canvas.stroke();
+  canvas.fill();
+
+};
+
+function renderEdge(e) {
+   
+  var cx = x(e.source.x);
+  var cy = y(e.source.y);
+
+  var dx = x(e.target.x);
+  var dy = y(e.target.y);
+
+   canvas.strokeStyle = e.color;
+   canvas.beginPath();
+   canvas.moveTo(cx, cy);
+   canvas.lineTo(dx, dy);
+   canvas.stroke();
+   canvas.fill();
+   
+};
+
+function renderData(o) {
+   if(o.type === "node") {
+     renderNode(o);
+   } else
+   if(o.type === "link") {
+      renderEdge(o);
+   } else {
+    console.log("Error!");
+   }
+
+
+}
+
+function FDL(nodesArr, linksArr) {
+  var force = d3.layout.force()
+              .charge(-40)
+              .linkDistance(5)
+              .gravity(0.06)
+              .size([WIDTH, HEIGHT]);
+
+       force.nodes(nodesArr)
+            .links(linksArr);
+      
+       force.start();
+       for(i = 0; i < 10; i++) force.tick();
+       force.stop();
+        
+       return nodesArr.concat(linksArr);
+};
+
+
+var render = renderQueue(renderData).clear(clear_canvas);
+
+var nodes = generateNodes(NUM_NODES);
+var links = generateLinks(nodes, NUM_EDGES);
+
+var data = FDL(nodes, links);
+
+render(data);
+
+function zoom() {
+  console.log("Calling zoom");
+  clear_canvas();
+  render(data);
+};
+
+
+</script>
+</body>
