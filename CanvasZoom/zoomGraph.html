@@ -48,6 +48,7 @@ function generateNodes(num) {
        y: Math.random() * HEIGHT,
        r: Math.random() * 10 + 3,
        color: getColor(Math.random()),
+       neighbors: [],
        type: "node"
      };
    });
@@ -145,8 +146,14 @@ render(data);
 function zoom() {
   console.log("Calling zoom");
   clear_canvas();
-  render(data);
+  //render(data);
+  for(i = 0; i < data.length; i++) {
+    var o = data[i];
+    renderData(o);
+  }
+  
 };
+
 
 
 </script>
