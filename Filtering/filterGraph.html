@@ -4,8 +4,11 @@
 
 <body>
 
+
 <script src="http://bl.ocks.org/syntagmatic/raw/3341641/render-queue.js"></script>
 <script src="http://d3js.org/d3.v2.js"></script>
+<script src="http://code.jquery.com/jquery-1.11.2.min.js"></script>
+
  
 <script>
 
@@ -28,6 +31,7 @@ var y = d3.scale.linear()
 
 var cv = d3.select("body")
              .append("canvas")
+             .attr("id", "canvas")
              .attr("width", WIDTH)
              .attr("height", HEIGHT);
 
@@ -47,8 +51,10 @@ function generateNodes(num) {
        x: Math.random() * WIDTH,
        y: Math.random() * HEIGHT,
        r: Math.random() * 10 + 3,
+       value: Math.random() * 10, 
        color: getColor(Math.random()),
        neighbors: [],
+       visible: true,
        type: "node"
      };
    });
@@ -66,7 +72,19 @@ function generateLinks(nodes, num) {
        };
    });
    
+   setNeighbors(links);
    return links;
+};
+
+function setNeighbors(links) {
+  for(i = 0; i < links.length; i++) {
+    l = links[i];
+    n1 = l.source;
+    n2 = l.target;
+
+    n1.neighbors.push(n2);
+    n2.neighbors.push(n1);
+  }
 };
 
 var clear_canvas = function() {
@@ -74,6 +92,9 @@ var clear_canvas = function() {
 };
 
 function renderNode(d) {
+  if(!d.visible) {
+    return;
+  } 
 
   var cx = x(d.x);
   var cy = y(d.y);
@@ -83,11 +104,13 @@ function renderNode(d) {
   canvas.fillRect(cx, cy, d.r / 2, d.r / 2);
   canvas.stroke();
   canvas.fill();
-
 };
 
 function renderEdge(e) {
-   
+  if(e.source.visible === false || e.target.visible === false) {
+    return;
+  }
+
   var cx = x(e.source.x);
   var cy = y(e.source.y);
 
@@ -143,9 +166,58 @@ var data = FDL(nodes, links);
 
 render(data);
 
+
+var onNode = false;
+cv.on("mousemove", function() {
+  var evt = d3.mouse(this);
+  
+  console.log(evt[0] + " " + evt[1]);
+  localOnNode = false;
+  currentOnNode = onNode;
+
+  var thresHold = 2;
+  
+  for(i = 0; i < nodes.length; i++) {
+    d = nodes[i];
+    
+    if(Math.abs(x(d.x) - evt[0]) < thresHold && Math.abs(y(d.y) - evt[1]) < thresHold) {
+      localOnNode = true;
+      d.visible = true;
+      console.log(d);
+    
+      for(j = 0; j < d.neighbors.length; j++) {
+        k = d.neighbors[j];
+        k.visible = true;
+        console.log(k);
+        }
+      } else { 
+        d.visible = false;
+      }
+    }
+
+    onNode = localOnNode;
+    if(!onNode) {
+      for(i = 0; i < nodes.length; i++) {
+        n = nodes[i];
+        n.visible = true;
+      }
+    }
+
+    if(currentOnNode !== onNode) {
+      render(data);
+    }
+
+});
+
+
+
 function zoom() {
   render(data);
 };
+
+
+
+
 
 
 
