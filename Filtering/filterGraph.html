@@ -3,12 +3,14 @@
 <title>Large Force D3 on canvas</title>
 
 <body>
-
-
+<button id="reset">Reset Nodes!</button>
+<div id="slider"></div>
 <script src="http://bl.ocks.org/syntagmatic/raw/3341641/render-queue.js"></script>
 <script src="http://d3js.org/d3.v2.js"></script>
 <script src="http://code.jquery.com/jquery-1.11.2.min.js"></script>
 
+<link rel="stylesheet" href="http://code.jquery.com/ui/1.11.2/themes/smoothness/jquery-ui.css">
+<script src="http://code.jquery.com/ui/1.11.2/jquery-ui.js"></script>
  
 <script>
 
@@ -165,7 +167,7 @@ var links = generateLinks(nodes, NUM_EDGES);
 var data = FDL(nodes, links);
 
 render(data);
-
+setSlider(nodes);
 
 var onNode = false;
 cv.on("mousemove", function() {
@@ -184,6 +186,7 @@ cv.on("mousemove", function() {
       localOnNode = true;
       d.visible = true;
       console.log(d);
+      nodeCallBack(d);
     
       for(j = 0; j < d.neighbors.length; j++) {
         k = d.neighbors[j];
@@ -209,14 +212,62 @@ cv.on("mousemove", function() {
 
 });
 
-
+function nodeCallBack(node) {
+  //Do Node callback stuffs here
+};
 
 function zoom() {
   render(data);
 };
 
+function getMax(nodesArr) {
+  var max = 0;
 
+  for(i = 0; i < nodesArr.length; i++) {
+    if(nodesArr[i].value > max) {
+      max = nodesArr[i].value;
+    }
+  }
 
+  return max;
+};
+
+function setSlider(nodesArr) {
+  var maxVal = getMax(nodesArr);
+
+  $("#slider").slider({
+    range: true,
+    min: 0, 
+    max: maxVal,
+    values: [0, maxVal],
+    slide: function(event, ui) {
+      var low, high;
+      low = ui.values[0];
+      high = ui.values[1];
+
+      for(i = 0; i < nodes.length; i++) {
+        var node = nodesArr[i];
+        if(node.value >= low && node.value <= high) {
+          node.visible = true;
+        } else {
+          node.visible = false;
+        }
+      }
+      render(data);
+    }
+  });
+};
+
+function resetVisibility(nodesArr) {
+  for(i = 0; i < nodesArr.length; i++) {
+    nodesArr[i].visible = true;
+  }
+  redner(data);
+};
+
+$("#reset").on("click", function() {
+  resetVisibility(nodes);
+});
 
 
 
